@@ -1,17 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyAuth } from "./src/middleware/auth";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
-export function middleware(req: NextRequest) {
-  // Example: protect /admin routes and redirect to /login if not authed
-  if (req.nextUrl.pathname.startsWith("/admin")) {
-    if (!verifyAuth(req)) {
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  // Refresh session if expired
+  await supabase.auth.getSession();
+
+  // Protect /admin routes (except login)
+  if (req.nextUrl.pathname.startsWith("/admin") && !req.nextUrl.pathname.startsWith("/admin/login")) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
       const url = req.nextUrl.clone();
-      url.pathname = "/login";
+      url.pathname = "/admin/login";
       return NextResponse.redirect(url);
     }
   }
 
-  const res = NextResponse.next();
   res.headers.set("x-myblog", "1");
   return res;
 }

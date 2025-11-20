@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "../components/site/Header";
 import Footer from "../components/site/Footer";
 import ThemeProvider from "../components/ThemeProvider";
+import ScrollProgress from "../components/ScrollProgress";
+import { AuthProvider } from "../components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 dark:bg-black`}
       >
-        <ThemeProvider />
-        <Header />
-        <main className="min-h-[70vh]">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <ThemeProvider />
+          <ScrollProgress />
+          <Header />
+          <main className="min-h-[70vh]">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
