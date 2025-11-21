@@ -1,48 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -79,44 +37,490 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Slate-based dark theme (Tailwind slate equivalents) */
+  --background: #0f1724; /* slate-900 */
+  --foreground: #e6eef8; /* slate-100 (light text) */
+  --card: #111827; /* slate-800 */
+  --card-foreground: #e6eef8; /* slate-100 */
+  --popover: #0b1220; /* slightly darker popover */
+  --popover-foreground: #e6eef8;
+  --primary: #60a5fa; /* blue-400 as accent */
+  --primary-foreground: #0b1220;
+  --secondary: #94a3b8; /* slate-400 */
+  --secondary-foreground: #0f1724;
+  --muted: #475569; /* slate-600 */
+  --muted-foreground: #cbd5e1; /* slate-300 */
+  --accent: #94a3b8;
+  --accent-foreground: #0f1724;
+  --destructive: #ef4444; /* red-500 */
+  --border: rgba(148,163,184,0.12); /* subtle slate-ish border */
+  --input: rgba(17,24,39,0.15);
+  --ring: rgba(99,102,241,0.24);
+  --chart-1: #60a5fa;
+  --chart-2: #64748b;
+  --chart-3: #94a3b8;
+  --chart-4: #1f2937;
+  --chart-5: #0f1724;
+  --sidebar: #0b1220;
+  --sidebar-foreground: #e6eef8;
+  --sidebar-primary: #1f2937;
+  --sidebar-primary-foreground: #e6eef8;
+  --sidebar-accent: #475569;
+  --sidebar-accent-foreground: #e6eef8;
+  --sidebar-border: rgba(148,163,184,0.08);
+  --sidebar-ring: rgba(99,102,241,0.18);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
+
+/* Mobile-optimized prose content */
+@layer utilities {
+  .prose {
+    word-wrap: break-word;
+  }
+  
+  /* Mobile: Images should be responsive */
+  .prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
+  
+  /* Mobile: Tables should scroll horizontally */
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* Mobile: Code blocks should scroll */
+  .prose pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  
+  /* Mobile: Prevent long words from breaking layout */
+  .prose p,
+  .prose li {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* EasyMDE/SimpleMDE Editor Styles */
+@layer components {
+  /* 에디터 컨테이너 기본 배경 */
+  .EasyMDEContainer .CodeMirror {
+    background-color: white;
+    color: rgb(17 24 39);
+    min-height: 300px;
+  }
+  
+  .dark .EasyMDEContainer .CodeMirror {
+    background-color: rgb(17 24 39);
+    color: rgb(243 244 246);
+  }
+  
+  /* 에디터 활성화 상태 */
+  .EasyMDEContainer .CodeMirror-focused {
+    background-color: white;
+  }
+  
+  .dark .EasyMDEContainer .CodeMirror-focused {
+    background-color: rgb(17 24 39);
+  }
+  
+  /* 에디터 라인 배경 */
+  .CodeMirror-line {
+    background: transparent;
+  }
+  
+  /* 커서 라인 하이라이트 */
+  .CodeMirror-activeline-background {
+    background-color: rgb(243 244 246);
+  }
+  
+  .dark .CodeMirror-activeline-background {
+    background-color: rgb(31 41 55);
+  }
+  
+  /* 선택 영역 */
+  .CodeMirror-selected {
+    background-color: rgb(219 234 254);
+  }
+  
+  .dark .CodeMirror-selected {
+    background-color: rgb(30 58 138 / 0.3);
+  }
+  
+  /* 거터(라인 넘버) 영역 */
+  .CodeMirror-gutters {
+    background-color: rgb(249 250 251);
+    border-right: 1px solid rgb(229 231 235);
+  }
+  
+  .dark .CodeMirror-gutters {
+    background-color: rgb(31 41 55);
+    border-right-color: rgb(55 65 81);
+  }
+  
+  /* 라인 넘버 텍스트 */
+  .CodeMirror-linenumber {
+    color: rgb(107 114 128);
+  }
+  
+  .dark .CodeMirror-linenumber {
+    color: rgb(156 163 175);
+  }
+  
+  /* 커서 */
+  .CodeMirror-cursor {
+    border-left: 2px solid rgb(17 24 39);
+  }
+  
+  .dark .CodeMirror-cursor {
+    border-left-color: rgb(243 244 246);
+  }
+  
+  /* 툴바 스타일 */
+  .editor-toolbar {
+    background-color: rgb(249 250 251);
+    border-color: rgb(229 231 235);
+  }
+  
+  .dark .editor-toolbar {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+  }
+  
+  .editor-toolbar button {
+    color: rgb(55 65 81);
+  }
+  
+  .dark .editor-toolbar button {
+    color: rgb(209 213 219);
+  }
+  
+  .editor-toolbar button:hover {
+    background-color: rgb(229 231 235);
+  }
+  
+  .dark .editor-toolbar button:hover {
+    background-color: rgb(55 65 81);
+  }
+  
+  .editor-toolbar.disabled-for-preview button:not(.no-disable) {
+    opacity: 0.3;
+  }
+  
+  /* 에러나 경고 상태에서 빨간 배경 제거 */
+  .CodeMirror-linebackground {
+    background: transparent !important;
+  }
+  
+  /* 전체 에디터 래퍼 */
+  .EasyMDEContainer {
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+  
+  /* ===== 구문 강조 스타일 - 빨간 배경 제거 ===== */
+  
+  /* 모든 텍스트 배경 강제 투명 */
+  .cm-s-easymde .CodeMirror-line > span,
+  .cm-s-easymde .CodeMirror-line > span > span {
+    background: transparent !important;
+  }
+  
+  /* Markdown 구문 요소들 */
+  .cm-header {
+    color: rgb(37 99 235);
+    font-weight: bold;
+    background: transparent !important;
+  }
+  
+  .dark .cm-header {
+    color: rgb(96 165 250);
+  }
+  
+  .cm-strong {
+    font-weight: bold;
+    color: rgb(17 24 39);
+    background: transparent !important;
+  }
+  
+  .dark .cm-strong {
+    color: rgb(243 244 246);
+  }
+  
+  .cm-em {
+    font-style: italic;
+    color: rgb(17 24 39);
+    background: transparent !important;
+  }
+  
+  .dark .cm-em {
+    color: rgb(243 244 246);
+  }
+  
+  .cm-link {
+    color: rgb(147 51 234);
+    text-decoration: underline;
+    background: transparent !important;
+  }
+  
+  .dark .cm-link {
+    color: rgb(192 132 252);
+  }
+  
+  .cm-url {
+    color: rgb(59 130 246);
+    background: transparent !important;
+  }
+  
+  .dark .cm-url {
+    color: rgb(147 197 253);
+  }
+  
+  .cm-quote {
+    color: rgb(75 85 99);
+    font-style: italic;
+    background: transparent !important;
+  }
+  
+  .dark .cm-quote {
+    color: rgb(156 163 175);
+  }
+  
+  .cm-code {
+    color: rgb(219 39 119);
+    font-family: monospace;
+    background: transparent !important;
+  }
+  
+  .dark .cm-code {
+    color: rgb(244 114 182);
+  }
+  
+  .cm-tag {
+    color: rgb(22 163 74);
+    background: transparent !important;
+  }
+  
+  .dark .cm-tag {
+    color: rgb(134 239 172);
+  }
+  
+  .cm-comment {
+    color: rgb(107 114 128);
+    font-style: italic;
+    background: transparent !important;
+  }
+  
+  /* 기본 텍스트 */
+  .CodeMirror pre.CodeMirror-line {
+    background: transparent !important;
+  }
+  
+  .CodeMirror-line span {
+    background: transparent !important;
+  }
+  
+  /* 모든 span 요소의 배경 제거 */
+  .cm-s-easymde span[role="presentation"] {
+    background-color: transparent !important;
+  }
+}
+
+/* Editor.js 스타일링 */
+.codex-editor {
+  min-height: 300px;
+}
+
+.codex-editor__redactor {
+  padding-bottom: 5rem;
+}
+
+.ce-block__content,
+.ce-toolbar__content {
+  max-width: none;
+}
+
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+  color: rgb(75 85 99);
+}
+
+.dark .ce-toolbar__plus,
+.dark .ce-toolbar__settings-btn {
+  color: rgb(156 163 175);
+}
+
+.ce-toolbar__plus:hover,
+.ce-toolbar__settings-btn:hover {
+  background-color: rgb(243 244 246);
+}
+
+.dark .ce-toolbar__plus:hover,
+.dark .ce-toolbar__settings-btn:hover {
+  background-color: rgb(31 41 55);
+}
+
+.ce-inline-toolbar {
+  background: white;
+  border: 1px solid rgb(229 231 235);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.dark .ce-inline-toolbar {
+  background: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.ce-inline-tool {
+  color: rgb(55 65 81);
+}
+
+.dark .ce-inline-tool {
+  color: rgb(209 213 219);
+}
+
+.ce-inline-tool:hover {
+  background-color: rgb(243 244 246);
+}
+
+.dark .ce-inline-tool:hover {
+  background-color: rgb(55 65 81);
+}
+
+.ce-conversion-toolbar,
+.ce-popover {
+  background: white;
+  border: 1px solid rgb(229 231 235);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.dark .ce-conversion-toolbar,
+.dark .ce-popover {
+  background: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.ce-popover__item {
+  color: rgb(55 65 81);
+}
+
+.dark .ce-popover__item {
+  color: rgb(209 213 219);
+}
+
+.ce-popover__item:hover {
+  background-color: rgb(243 244 246);
+}
+
+.dark .ce-popover__item:hover {
+  background-color: rgb(55 65 81);
+}
+
+.ce-popover__item-icon {
+  color: rgb(107 114 128);
+}
+
+.dark .ce-popover__item-icon {
+  color: rgb(156 163 175);
+}
+
+.ce-block--selected .ce-block__content {
+  background-color: rgb(239 246 255);
+}
+
+.dark .ce-block--selected .ce-block__content {
+  background-color: rgb(30 58 138 / 0.2);
+}
+
+.ct {
+  background-color: rgb(17 24 39);
+  color: white;
+}
+
+.dark .ct {
+  background-color: rgb(55 65 81);
+}
+
+.cdx-input {
+  background: white;
+  border-color: rgb(209 213 219);
+  color: rgb(17 24 39);
+}
+
+.dark .cdx-input {
+  background: rgb(17 24 39);
+  border-color: rgb(75 85 99);
+  color: rgb(243 244 246);
+}
+
+.cdx-input:focus {
+  border-color: rgb(59 130 246);
+  outline: 2px solid rgb(59 130 246 / 0.2);
+  outline-offset: 2px;
+}
+
+.dark .cdx-input:focus {
+  border-color: rgb(96 165 250);
+}
+
+/* Global overrides: make common Tailwind background utilities respond to CSS variables in dark mode.
+   This helps when components use utility classes like `bg-white` but we want the variable-driven
+   card/background colors to apply site-wide in dark mode. */
+.dark .bg-white { background-color: var(--card) !important; color: var(--card-foreground) !important; }
+.dark .bg-zinc-50 { background-color: var(--background) !important; }
+.dark .bg-gray-50 { background-color: var(--background) !important; }
+.dark .bg-white\/80 { background-color: color-mix(in srgb, var(--card) 80%, transparent) !important; }
+.dark .border-gray-200 { border-color: color-mix(in srgb, var(--border) 60%, transparent) !important; }
+
+/* Additional common opacity variants and gray utilities */
+.dark .bg-white\/50 { background-color: color-mix(in srgb, var(--card) 50%, transparent) !important; }
+.dark .bg-white\/60 { background-color: color-mix(in srgb, var(--card) 60%, transparent) !important; }
+.dark .bg-white\/40 { background-color: color-mix(in srgb, var(--card) 40%, transparent) !important; }
+.dark .bg-gray-100 { background-color: color-mix(in srgb, var(--card) 8%, transparent) !important; }
+.dark .bg-gray-200 { background-color: color-mix(in srgb, var(--card) 12%, transparent) !important; }
+.dark .bg-gray-300 { background-color: color-mix(in srgb, var(--card) 18%, transparent) !important; }
+.dark .bg-gray-100\/60 { background-color: color-mix(in srgb, var(--card) 60%, transparent) !important; }
+
+/* Fallback: elements that set bg-white without a dark: variant */
+.dark [class*="bg-white"] { background-color: var(--card) !important; color: var(--card-foreground) !important; }
+
+/* Highest-priority background/text override to ensure CSS variable theme applies site-wide. */
+html, body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+.dark html, .dark body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Surface utilities: use CSS variables for card/surface backgrounds so components
+   can opt-in to variable-driven colors (works in light and dark modes). */
+.surface {
+  background-color: var(--card); /* card background */
+  color: var(--card-foreground);
+}
+
+.surface-60 {
+  background-color: color-mix(in srgb, var(--card) 60%, transparent);
+  color: var(--card-foreground);
+}
+
+
+

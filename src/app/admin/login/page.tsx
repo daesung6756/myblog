@@ -5,12 +5,28 @@ import Container from "../../../components/ui/Container";
 import { useRouter } from "next/navigation";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState("");
+  const [dialogMessage, setDialogMessage] = useState("");
+
+  const showDialog = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogOpen(true);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +40,12 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      alert("로그인 성공!");
-      router.push("/admin/posts");
+      showDialog("성공", "로그인 성공!");
+      setTimeout(() => {
+        router.push("/admin/posts");
+      }, 1000);
     } catch (error: any) {
-      alert("로그인 실패: " + error.message);
+      showDialog("오류", "로그인 실패: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -65,6 +83,17 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogMessage}</DialogDescription>
+          </DialogHeader>
+          <Button onClick={() => setDialogOpen(false)}>확인</Button>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 }

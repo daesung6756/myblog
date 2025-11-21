@@ -19,7 +19,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  res.headers.set("x-myblog", "1");
+  res.headers.set("x-leedsblog", "1");
   return res;
 }
 

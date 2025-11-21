@@ -11,15 +11,27 @@ type Store = {
 };
 
 const useStore = create<Store>((set, get) => ({
-  theme: (typeof window !== "undefined" && (localStorage.getItem("theme") as Theme)) || "light",
+  theme:
+    (typeof window !== "undefined" && (localStorage.getItem("theme") as Theme)) ||
+    (typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? ("dark" as Theme) : ("light" as Theme)),
   toggleTheme() {
     const next = get().theme === "light" ? "dark" : "light";
     set({ theme: next });
-    if (typeof window !== "undefined") localStorage.setItem("theme", next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", next);
+      try {
+        document.cookie = `theme=${next}; path=/; max-age=${60 * 60 * 24 * 365}`;
+      } catch (e) {}
+    }
   },
   setTheme(t: Theme) {
     set({ theme: t });
-    if (typeof window !== "undefined") localStorage.setItem("theme", t);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", t);
+      try {
+        document.cookie = `theme=${t}; path=/; max-age=${60 * 60 * 24 * 365}`;
+      } catch (e) {}
+    }
   },
   user: undefined,
   setUser(u?: User) {
