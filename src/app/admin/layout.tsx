@@ -5,7 +5,9 @@ import Container from "@/components/ui/Container";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
-  const active = pathname.startsWith("/admin/inquiries") ? "inquiries" : "posts";
+  let active = "posts";
+  if (pathname.startsWith("/admin/inquiries")) active = "inquiries";
+  if (pathname.startsWith("/admin/images")) active = "images";
 
   return (
     <Container>
@@ -34,6 +36,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                 >
                   문의 관리
+                </Link>
+                <Link
+                  href="/admin/images"
+                  aria-current={active === "images"}
+                  className={`ml-1 px-4 py-2 rounded-full text-sm font-semibold transition duration-200 ${
+                    active === "images"
+                      ? "bg-linear-to-r from-purple-600 to-pink-500 text-white shadow-sm"
+                      : "text-zinc-600 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400"
+                  }`}
+                >
+                  이미지 관리
                 </Link>
               </div>
           </nav>

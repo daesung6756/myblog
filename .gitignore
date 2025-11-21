@@ -42,3 +42,5 @@ next-env.d.ts
 
 # ad guide (documentation only)
 AD_GUIDE.md
+
+.vercel

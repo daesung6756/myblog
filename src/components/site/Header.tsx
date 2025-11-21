@@ -4,6 +4,7 @@ import useStore from "../../store/useStore";
 import { useAuth } from "../AuthProvider";
 import { useEffect, useState } from "react";
 import MicrositeNav from "./MicrositeNav";
+import ScrollProgress from "../ScrollProgress";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 
@@ -19,7 +20,8 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 backdrop-blur-md dark:bg-gray-900/80 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md dark:bg-gray-900/80 shadow-sm" style={{ borderBottomColor: 'var(--border)' }}>
+      <ScrollProgress />
       {/* Top bar - Microsite links - Hidden on mobile */}
       <div className="hidden md:block">
         <MicrositeNav />
@@ -71,7 +73,7 @@ export default function Header() {
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="relative ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 bg-linear-to-br from-amber-400 to-orange-400 dark:from-blue-600 dark:to-purple-600 shadow-lg"
+              className="relative ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 bg-linear-to-br from-amber-400 to-orange-400 dark:from-[#071032] dark:to-[#2b1b44] shadow-lg"
             >
               <span className="text-lg">
                 {theme === "dark" ? "🌙" : "☀️"}
@@ -86,7 +88,7 @@ export default function Header() {
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-95 bg-linear-to-br from-amber-400 to-orange-400 dark:from-blue-600 dark:to-purple-600 shadow-lg"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-95 bg-linear-to-br from-amber-400 to-orange-400 dark:from-[#071032] dark:to-[#2b1b44] shadow-lg"
             >
               <span className="text-base">
                 {theme === "dark" ? "🌙" : "☀️"}
@@ -111,7 +113,7 @@ export default function Header() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200/50 dark:border-gray-800/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md">
+        <div className="md:hidden border-t bg-white/95 dark:bg-gray-900/95 backdrop-blur-md" style={{ borderTopColor: 'var(--border)' }}>
           <nav className="px-4 py-4 space-y-1">
             <Link 
               href="/blog" 

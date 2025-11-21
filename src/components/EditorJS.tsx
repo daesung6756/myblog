@@ -198,13 +198,37 @@ const EditorJSComponent = ({ value, onChange, placeholder }: EditorJSProps) => {
           image: {
             class: ImageTool as any,
             config: {
+              // keep the byFile endpoint for direct endpoint fallback
               endpoints: {
-                byFile: "/api/upload", // 파일 업로드 엔드포인트
+                byFile: "/api/upload",
               },
-              field: "image", // 파일 필드명
-              types: "image/*", // 허용할 파일 타입
-              additionalRequestHeaders: {
-                // 필요시 인증 헤더 추가
+              field: "image",
+              types: "image/*",
+              additionalRequestHeaders: {},
+              // Provide uploader methods so Editor.js can accept both file uploads and image URLs.
+              uploader: {
+                async uploadByFile(file: File) {
+                  const form = new FormData();
+                  form.append("image", file, file.name);
+                  const res = await fetch("/api/upload", { method: "POST", body: form });
+                  if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(txt || res.statusText);
+                  }
+                  return res.json();
+                },
+                async uploadByUrl(url: string) {
+                  const res = await fetch("/api/upload-remote", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url }),
+                  });
+                  if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(txt || res.statusText);
+                  }
+                  return res.json();
+                },
               },
             },
           },

@@ -10,7 +10,7 @@ type Params = { params: { slug: string } };
 export const revalidate = 60; // ISR: 60초마다 재검증
 
 export default async function PostPage({ params }: Params) {
-  const { slug } = await params;
+  const { slug } = params;
 
   const { data: post, error } = await supabase
     .from('posts')

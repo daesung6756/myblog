@@ -4,7 +4,6 @@ import "./globals.css";
 import Header from "../components/site/Header";
 import Footer from "../components/site/Footer";
 import ThemeProvider from "../components/ThemeProvider";
-import ScrollProgress from "../components/ScrollProgress";
 import { AuthProvider } from "../components/AuthProvider";
 import Script from 'next/script';
 import { cookies } from 'next/headers';
@@ -45,7 +44,6 @@ export default async function RootLayout({
         </Script>
         <AuthProvider>
           <ThemeProvider />
-          <ScrollProgress />
           <Header />
           <main className="min-h-[70vh]">{children}</main>
           <Footer />

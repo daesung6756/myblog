@@ -1,30 +1,42 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function ScrollProgress() {
-  const [progress, setProgress] = useState(0);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
-      const trackLength = documentHeight - windowHeight;
-      const percent = trackLength > 0 ? (scrollTop / trackLength) * 100 : 0;
-      setProgress(percent);
+    const update = () => {
+      const winH = window.innerHeight;
+      const docH = document.documentElement.scrollHeight;
+      const sc = window.scrollY;
+      const track = Math.max(docH - winH, 1);
+      const value = Math.min(Math.max(sc / track, 0), 1);
+      if (barRef.current) {
+        barRef.current.style.transform = `scaleX(${value})`;
+      }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
+    const handleScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(update);
+    };
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    update(); // initial
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return (
-    <div className="fixed left-0 top-[57px] md:top-[73px] z-40 h-1 w-full bg-gray-200/50 dark:bg-gray-800/50">
+    <div className="absolute left-0 bottom-0 h-1 w-full bg-gray-200/50 dark:bg-gray-800/50 overflow-hidden">
       <div
-        className="h-full bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 transition-all duration-150"
-        style={{ width: `${progress}%` }}
+        ref={barRef}
+        className="h-full origin-left bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 transition-transform duration-300 ease-out"
+        style={{ transform: "scaleX(0)" }}
       />
     </div>
   );

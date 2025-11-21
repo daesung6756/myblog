@@ -4,10 +4,10 @@ import bcrypt from "bcryptjs";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: any }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     const { password } = await request.json();
 
     if (!password) {
