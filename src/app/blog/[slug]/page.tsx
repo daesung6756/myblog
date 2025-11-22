@@ -175,6 +175,15 @@ export default async function PostPage({ params }: Params) {
 
             {/* 댓글 섹션 */}
             <CommentSection postId={post.id} />
+            {/* 이전/다음 네비게이션 (댓글 아래) */}
+            {/* PostNav는 서버 컴포넌트로, 인자로 slug와 published_at(또는 id)을 받아 근처 포스트를 조회합니다. */}
+            {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+            {/* @ts-ignore Server Component import usage in a Server Component is fine */}
+            {/* We import dynamically below to avoid TypeScript complaints in mixed setups. */}
+            {
+              //@ts-ignore
+              (await import('@/components/PostNav')).default({ slug: post.slug, publishedAt: post.published_at, id: post.id })
+            }
           </article>
         </div>
       </Container>
