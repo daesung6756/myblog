@@ -5,14 +5,12 @@ import LoginPageClient from "./LoginClient";
 
 export default async function LoginPage() {
   // Server-side: check if a session exists and redirect to admin posts.
-  let nextCookiesObj: any = null;
-  try {
-    nextCookiesObj = await cookies();
-  } catch (e) {
-    // ignore
-  }
-  const nextHeaders = headers();
-  const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+  // Use the request-scoped `cookies()` and `headers()` helpers directly
+  // (they are sync functions in the App Router) to avoid type mismatches
+  const routeSupabase = createRouteHandlerClient({
+    cookies: () => cookies(),
+    headers: () => headers(),
+  });
   const { data: sessionData } = await routeSupabase.auth.getSession();
   const session = (sessionData as any)?.session;
   if (session) {
