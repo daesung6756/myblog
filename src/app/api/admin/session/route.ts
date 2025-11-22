@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +10,7 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
     const { data: sessionData, error } = await routeSupabase.auth.getSession();
     const session = (sessionData as any)?.session;
     if (error) {

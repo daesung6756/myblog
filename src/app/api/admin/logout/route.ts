@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,9 +10,7 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
     const { error } = await routeSupabase.auth.signOut();
     if (error) {
       console.error('[api/admin/logout] signOut error:', error.message || error);

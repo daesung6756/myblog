@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,9 +13,7 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
 
     // Check session / user
     const { data: sessionData } = await routeSupabase.auth.getSession();
@@ -59,9 +57,7 @@ export async function PUT(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
 
     const { data: sessionData } = await routeSupabase.auth.getSession();
     const user = (sessionData as any)?.session?.user;
@@ -108,9 +104,7 @@ export async function DELETE(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
 
     const { data: sessionData } = await routeSupabase.auth.getSession();
     const user = (sessionData as any)?.session?.user;

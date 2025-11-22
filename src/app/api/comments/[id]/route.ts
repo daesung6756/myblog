@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
@@ -24,8 +24,7 @@ export async function DELETE(
     } catch (e) {
       // ignore
     }
-    const nextHeaders = headers();
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
 
     // Try to detect admin session using the route handler client so the
     // request cookies (session) are read correctly in the app router.
@@ -82,10 +81,10 @@ export async function DELETE(
     // If admin, perform a soft-delete by setting `deleted_at` (and record admin delete).
     // If the `deleted_at` column does not exist, fall back to hard delete.
     if (isAdmin) {
+      let updateError: any = null;
+      let updateData: any = null;
       try {
         // Try to perform the update in the request-scoped context first.
-        let updateError: any = null;
-        let updateData: any = null;
         try {
           const ures = await routeSupabase
             .from("comments")

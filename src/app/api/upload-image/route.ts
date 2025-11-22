@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate the request: require a logged-in session
-    const authClient = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => headers() });
+    const authClient = createRouteHandlerClient({ cookies: () => nextCookiesObj });
     const { data: { session } } = await authClient.auth.getSession();
 
     if (!session) {

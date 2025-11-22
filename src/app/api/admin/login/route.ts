@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +18,6 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // fallthrough - leave null
     }
-    const nextHeaders = headers();
-
     // Create a safe cookies wrapper that provides `get` and `set` for the
     // auth helper. `set` will record cookie writes into `pendingSetCookies` so
     // we can apply them to the NextResponse after sign-in completes. This
@@ -50,7 +48,7 @@ export async function POST(request: NextRequest) {
       },
     } as any;
 
-    const routeSupabase = createRouteHandlerClient({ cookies: () => cookieWrapper, headers: () => nextHeaders });
+    const routeSupabase = createRouteHandlerClient({ cookies: () => cookieWrapper });
 
     const { data, error } = await routeSupabase.auth.signInWithPassword({
       email,
