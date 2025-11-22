@@ -80,7 +80,14 @@ export async function POST(request: NextRequest) {
     });
 
     // More detailed debug logging for sign-in. Avoid printing tokens.
-    console.log('[api/admin/login] signInWithPassword completed, error=', !!error, 'message=', error?.message);
+    try {
+      const hasSession = !!data?.session;
+      const hasAccess = !!(data?.session?.access_token);
+      const hasRefresh = !!(data?.session?.refresh_token);
+      console.log('[api/admin/login] signInWithPassword completed, error=', !!error, 'message=', error?.message, 'hasSession=', hasSession, 'hasAccess=', hasAccess, 'hasRefresh=', hasRefresh);
+    } catch (e) {
+      console.log('[api/admin/login] signInWithPassword completed (could not inspect data)');
+    }
 
     if (error) {
       console.error('[api/admin/login] signIn error detail:', error);
