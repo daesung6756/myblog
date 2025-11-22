@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createRouteHandlerClient } from "@supabase/ssr";
 import { redirect } from "next/navigation";
 import LoginPageClient from "./LoginClient";
 
