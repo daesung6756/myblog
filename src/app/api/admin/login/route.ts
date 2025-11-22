@@ -56,7 +56,21 @@ export async function POST(request: NextRequest) {
           return [];
         }
       },
-      setAll: async (_setCookies: any[]) => { /* noop - login route uses cookieWrapper to collect pending cookies and applies them to response */ },
+      setAll: async (setCookies: any[]) => {
+        try {
+          // Forward writes from the helper to our cookieWrapper so they are
+          // recorded in `pendingSetCookies` and later applied to the response.
+          for (const sc of setCookies || []) {
+            try {
+              cookieWrapper.set(sc.name, sc.value, sc.options || {});
+            } catch (e) {
+              // ignore individual cookie failures
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      },
     };
     const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
