@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
+import CommentMoreButton from "./CommentMoreButton";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +13,24 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { z } from "zod";
+import timeAgo from "../lib/timeAgo";
+import EmojiPicker from "./EmojiPicker";
+import CommentItem from "./CommentItem";
+import CommentItemReplyList from "./CommentItemReplyList";
+import maskIp from "@/lib/maskIp";
+import CommentForm from "./CommentForm";
 
 const commentSchema = z.object({
   authorName: z.string().min(1, "이름을 입력해주세요").max(50, "이름은 50자 이하로 입력해주세요"),
-  authorEmail: z.string().email("올바른 이메일 주소를 입력해주세요"),
+  // 이메일은 선택 항목입니다. 빈 문자열이면 허용하고, 입력한 경우 형식을 검사합니다.
+  authorEmail: z.string().refine((s) => s.trim() === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s), {
+    message: "올바른 이메일 주소를 입력해주세요",
+  }),
   content: z.string().min(1, "댓글 내용을 입력해주세요").max(1000, "댓글은 1000자 이하로 입력해주세요"),
-  password: z.string().min(4, "비밀번호는 최소 4자 이상이어야 합니다").max(20, "비밀번호는 20자 이하로 입력해주세요"),
+  // 비밀번호는 선택 항목입니다. 비어있으면 허용하고, 입력한 경우 길이를 검사합니다.
+  password: z.string().refine((s) => s === "" || (s.length >= 4 && s.length <= 20), {
+    message: "비밀번호는 4자 이상 20자 이하로 입력해주세요",
+  }),
 });
 
 interface Comment {
@@ -27,6 +40,10 @@ interface Comment {
   content: string;
   created_at: string;
   password_hash: string;
+  ip_address?: string | null;
+  deleted_at?: string | null;
+  deleted_by_admin?: boolean | null;
+  reply_to?: string | null;
 }
 
 interface CommentSectionProps {
@@ -47,6 +64,37 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
 
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [replyAuthorName, setReplyAuthorName] = useState("");
+  const [replyAuthorEmail, setReplyAuthorEmail] = useState("");
+  const [replyContent, setReplyContent] = useState("");
+  const [replyPassword, setReplyPassword] = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [replyErrors, setReplyErrors] = useState<{ [key: string]: string }>({});
+  const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // IP 마스킹 유틸: IPv4는 마지막 옥텟 전체를 '***'로, IPv6는 마지막 그룹을 '***'로 마스킹합니다.
+  const maskIp = (ip?: string | null) => {
+    if (!ip) return "";
+    // IPv4
+    if (ip.includes(".")) {
+      const parts = ip.split(".");
+      if (parts.length >= 4) {
+        parts[parts.length - 1] = "***";
+        return parts.join(".");
+      }
+    }
+    // IPv6
+    if (ip.includes(":")) {
+      const parts = ip.split(":");
+      parts[parts.length - 1] = "***";
+      return parts.join(":");
+    }
+    // 기타: 끝의 3문자 마스킹
+    return ip.slice(0, Math.max(0, ip.length - 3)) + "***";
+  };
+
   useEffect(() => {
     fetchComments();
   }, [postId]);
@@ -58,14 +106,72 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const fetchComments = async () => {
-    const { data, error } = await supabase
-      .from("comments")
-      .select("*")
-      .eq("post_id", postId)
-      .order("created_at", { ascending: false });
+    // Always fetch all comments for this post, then let the client decide
+    // which to display. This allows us to show placeholders for comments
+    // soft-deleted by admins (deleted_by_admin = true) while hiding other
+    // deleted rows.
+    let data: any = null;
+    try {
+      const res = await supabase
+        .from("comments")
+        .select("*")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: true });
+      data = res.data;
+    } catch (e) {
+      data = null;
+    }
 
     if (data) {
-      setComments(data);
+      console.log('[fetchComments] raw data count:', data.length, data.find((c: any) => c.id === data[0]?.id));
+      // Exclude comments that were deleted by their author (deleted_at set
+      // and deleted_by_admin not true). Keep admin-deleted rows so we can
+      // render placeholders client-side.
+      data = data.filter((c: any) => !(c.deleted_at && !c.deleted_by_admin));
+      // Build a nested ordering that supports replies to replies.
+      // Create a map of parentId -> children array for efficient lookup,
+      // then traverse starting from top-level comments.
+      const childrenMap = new Map<string, any[]>();
+      const byId = new Map<string, any>();
+      data.forEach((c: any) => {
+        byId.set(String(c.id), c);
+        if (c.reply_to) {
+          const key = String(c.reply_to);
+          const arr = childrenMap.get(key) || [];
+          arr.push(c);
+          childrenMap.set(key, arr);
+        }
+      });
+
+      // Top-level comments (no reply_to), newest last as before
+      const topLevel = data.filter((c: any) => !c.reply_to).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      const ordered: Comment[] = [];
+
+      const appendWithChildren = (parent: any) => {
+        ordered.push(parent);
+        const children = (childrenMap.get(String(parent.id)) || []).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        for (const child of children) {
+          appendWithChildren(child);
+        }
+      };
+
+      for (const parent of topLevel) {
+        appendWithChildren(parent);
+      }
+
+      // Preserve locally-known admin-deleted flags to avoid flicker where an
+      // optimistic UI update is overwritten by a slightly stale server read.
+      const prevMap = new Map(comments.map((c) => [c.id, c]));
+      const merged = ordered.map((c) => {
+        const prev = prevMap.get(c.id);
+        if (prev && prev.deleted_by_admin) {
+          return { ...c, deleted_by_admin: true, deleted_at: prev.deleted_at || c.deleted_at };
+        }
+        return c;
+      });
+      console.log('[fetchComments] merged count:', merged.length, 'sample:', merged.slice(0,3));
+      setComments(merged);
     }
   };
 
@@ -138,6 +244,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       const response = await fetch(`/api/comments/${commentId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password: deletePassword }),
       });
 
@@ -157,68 +264,120 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     }
   };
 
+  const insertEmojiAtCaret = (emoji: string) => {
+    const el = textareaRef.current
+    if (!el) {
+      setContent((c) => c + emoji)
+      return
+    }
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? start
+    const newValue = content.slice(0, start) + emoji + content.slice(end)
+    setContent(newValue)
+    // restore focus and caret after React updates
+    setTimeout(() => {
+      el.focus()
+      const pos = start + emoji.length
+      el.selectionStart = el.selectionEnd = pos
+    }, 0)
+  }
+
+  const insertEmojiAtCaretReply = (emoji: string) => {
+    const el = replyTextareaRef.current
+    if (!el) {
+      setReplyContent((c) => c + emoji)
+      return
+    }
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? start
+    const newValue = replyContent.slice(0, start) + emoji + replyContent.slice(end)
+    setReplyContent(newValue)
+    setTimeout(() => {
+      el.focus()
+      const pos = start + emoji.length
+      el.selectionStart = el.selectionEnd = pos
+    }, 0)
+  }
+
+  const handleReplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReplyErrors({});
+
+    const validation = commentSchema.safeParse({
+      authorName: replyAuthorName.trim(),
+      authorEmail: replyAuthorEmail.trim(),
+      content: replyContent.trim(),
+      password: replyPassword,
+    });
+
+    if (!validation.success) {
+      const newErrors: { [key: string]: string } = {};
+      validation.error.issues.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setReplyErrors(newErrors);
+      return;
+    }
+
+    setReplyLoading(true);
+
+    try {
+      const response = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId: postId,
+          authorName: validation.data.authorName,
+          authorEmail: validation.data.authorEmail,
+          content: validation.data.content,
+          password: validation.data.password,
+          // optional: include parent id as reply_to if backend supports it
+          replyTo: replyingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showDialog("오류", data.error || "댓글 작성에 실패했습니다.");
+      } else {
+        setReplyAuthorName("");
+        setReplyAuthorEmail("");
+        setReplyContent("");
+        setReplyPassword("");
+        setReplyingId(null);
+        fetchComments();
+        showDialog("성공", "댓글이 작성되었습니다.");
+      }
+    } catch (error) {
+      console.error("Reply submit error:", error);
+      showDialog("오류", "댓글 작성 중 오류가 발생했습니다.");
+    }
+
+    setReplyLoading(false);
+  };
+
   return (
     <div className="mt-8 sm:mt-12 border-t pt-6 sm:pt-8">
       <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl font-bold">댓글 ({comments.length})</h2>
 
-      {/* 댓글 작성 폼 */}
-      <form onSubmit={handleSubmit} className="mb-6 sm:mb-8 space-y-3 sm:space-y-4">
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-          <div>
-            <Input
-              type="text"
-              placeholder="이름 *"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-              className="h-10 sm:h-11"
-            />
-            {errors.authorName && (
-              <p className="mt-1 text-sm text-red-500">{errors.authorName}</p>
-            )}
-          </div>
-          <div>
-            <Input
-              type="email"
-              placeholder="이메일 *"
-              value={authorEmail}
-              onChange={(e) => setAuthorEmail(e.target.value)}
-              className="h-10 sm:h-11"
-            />
-            {errors.authorEmail && (
-              <p className="mt-1 text-sm text-red-500">{errors.authorEmail}</p>
-            )}
-          </div>
-        </div>
-        <div>
-          <Input
-            type="password"
-            placeholder="비밀번호 (삭제 시 필요) *"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="h-10 sm:h-11"
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-500">{errors.password}</p>
-          )}
-        </div>
-        <div>
-          <Textarea
-            placeholder="댓글을 입력하세요 *"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={4}
-            className="text-sm sm:text-base"
-          />
-          {errors.content && (
-            <p className="mt-1 text-sm text-red-500">{errors.content}</p>
-          )}
-        </div>
-        <div className="flex justify-end">
-          <Button type="submit" disabled={loading} className="w-full sm:w-auto h-10 sm:h-11">
-            {loading ? "작성 중..." : "댓글 작성"}
-          </Button>
-        </div>
-      </form>
+      <CommentForm
+        authorName={authorName}
+        setAuthorName={setAuthorName}
+        authorEmail={authorEmail}
+        setAuthorEmail={setAuthorEmail}
+        password={password}
+        setPassword={setPassword}
+        content={content}
+        setContent={setContent}
+        errors={errors}
+        loading={loading}
+        textareaRef={textareaRef}
+        insertEmojiAtCaret={insertEmojiAtCaret}
+        onSubmit={handleSubmit}
+      />
 
       {/* 댓글 목록 */}
       <div className="space-y-3 sm:space-y-4">
@@ -228,69 +387,174 @@ export default function CommentSection({ postId }: CommentSectionProps) {
           </p>
         ) : (
           <>
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="rounded-lg border bg-white p-3 sm:p-4 dark:bg-zinc-900"
-              >
-                <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span className="font-semibold text-sm sm:text-base">{comment.author_name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm text-zinc-500">
-                      {new Date(comment.created_at).toLocaleDateString("ko-KR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeletingId(comment.id)}
-                      className="text-red-500 hover:text-red-700 h-8"
-                    >
-                      삭제
-                    </Button>
-                  </div>
-                </div>
-                <p className="whitespace-pre-wrap text-sm sm:text-base text-zinc-700 dark:text-zinc-300 wrap-break-word">
-                  {comment.content}
-                </p>
-                {deletingId === comment.id && (
-                  <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t pt-3">
-                    <Input
-                      type="password"
-                      placeholder="비밀번호 입력"
-                      value={deletePassword}
-                      onChange={(e) => setDeletePassword(e.target.value)}
-                      className="flex-1 h-9"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleDelete(comment.id)}
-                        className="flex-1 sm:flex-none h-9"
-                      >
-                        확인
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setDeletingId(null);
-                          setDeletePassword("");
+            {/** Render only top-level comments; replies are handled by CommentItemReplyList */}
+            {comments
+              .filter((c) => !c.reply_to)
+              .map((comment) => (
+                <div key={comment.id}>
+                  <CommentItem
+                    comment={comment}
+                    onReply={(id, name) => {
+                      setReplyingId(id);
+                      setReplyAuthorName("");
+                      setReplyAuthorEmail("");
+                      setReplyPassword("");
+                      setReplyContent(`@${name} `);
+                      setTimeout(() => replyTextareaRef.current?.focus(), 0);
+                    }}
+                    onAdminDelete={async () => {
+                      try {
+                        const res = await fetch(`/api/comments/${comment.id}`, {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          const payload = data || {};
+                          if (payload.comment) {
+                            const updated = { ...payload.comment };
+                            if (!updated.deleted_by_admin) {
+                              updated.deleted_by_admin = true;
+                              if (!updated.deleted_at) updated.deleted_at = new Date().toISOString();
+                            }
+                            setComments((prev) => prev.map((c) => (c.id === comment.id ? updated : c)));
+                            setTimeout(() => fetchComments(), 500);
+                          } else {
+                            setComments((prev) =>
+                              prev.map((c) =>
+                                c.id === comment.id
+                                  ? { ...c, deleted_by_admin: true, deleted_at: new Date().toISOString() }
+                                  : c
+                              )
+                            );
+                            setTimeout(() => fetchComments(), 500);
+                          }
+                          showDialog("성공", "관리자에 의해 삭제 되었습니다");
+                        } else {
+                          showDialog("오류", data.error || "댓글 삭제에 실패했습니다.");
+                        }
+                      } catch (err) {
+                        console.error("Admin delete error:", err);
+                        showDialog("오류", "댓글 삭제 중 오류가 발생했습니다.");
+                      }
+                    }}
+                    onDeleteClick={() => setDeletingId(comment.id)}
+                    onCancel={() => {
+                      setDeletingId(null);
+                      setDeletePassword("");
+                    }}
+                    deletingId={deletingId}
+                    deletePassword={deletePassword}
+                    setDeletePassword={setDeletePassword}
+                    handleDelete={handleDelete}
+                    replyingId={replyingId}
+                    setReplyingId={setReplyingId}
+                    replyAuthorName={replyAuthorName}
+                    setReplyAuthorName={setReplyAuthorName}
+                    replyAuthorEmail={replyAuthorEmail}
+                    setReplyAuthorEmail={setReplyAuthorEmail}
+                    replyContent={replyContent}
+                    setReplyContent={setReplyContent}
+                    replyPassword={replyPassword}
+                    setReplyPassword={setReplyPassword}
+                    replyLoading={replyLoading}
+                    replyErrors={replyErrors}
+                    setReplyErrors={setReplyErrors}
+                    replyTextareaRef={replyTextareaRef}
+                    insertEmojiAtCaretReply={insertEmojiAtCaretReply}
+                    handleReplySubmit={handleReplySubmit}
+                  />
+
+                  {/** Replies toggle/list */}
+                  <CommentItemReplyList
+                    parentId={comment.id}
+                    comments={comments}
+                    onReply={(id, name) => {
+                      setReplyingId(id);
+                      setReplyAuthorName("");
+                      setReplyAuthorEmail("");
+                      setReplyPassword("");
+                      setReplyContent(`@${name} `);
+                      setTimeout(() => replyTextareaRef.current?.focus(), 0);
+                    }}
+                    onDeleteClick={(id) => setDeletingId(id)}
+                    onAdminDelete={async (id) => {
+                      try {
+                        const res = await fetch(`/api/comments/${id}`, {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setComments((prev) => prev.map((c) => (c.id === id ? { ...c, deleted_by_admin: true, deleted_at: new Date().toISOString() } : c)));
+                          setTimeout(() => fetchComments(), 500);
+                          showDialog("성공", "관리자에 의해 삭제 되었습니다");
+                        } else {
+                          showDialog("오류", data.error || "댓글 삭제에 실패했습니다.");
+                        }
+                      } catch (err) {
+                        console.error("Admin delete error:", err);
+                        showDialog("오류", "댓글 삭제 중 오류가 발생했습니다.");
+                      }
+                    }}
+                    onCancel={() => {
+                      setDeletingId(null);
+                      setDeletePassword("");
+                    }}
+                    deletingId={deletingId}
+                    deletePassword={deletePassword}
+                    setDeletePassword={setDeletePassword}
+                    handleDelete={handleDelete}
+                    replyingId={replyingId}
+                    setReplyingId={setReplyingId}
+                    replyAuthorName={replyAuthorName}
+                    setReplyAuthorName={setReplyAuthorName}
+                    replyAuthorEmail={replyAuthorEmail}
+                    setReplyAuthorEmail={setReplyAuthorEmail}
+                    replyContent={replyContent}
+                    setReplyContent={setReplyContent}
+                    replyPassword={replyPassword}
+                    setReplyPassword={setReplyPassword}
+                    replyLoading={replyLoading}
+                    replyErrors={replyErrors}
+                    setReplyErrors={setReplyErrors}
+                    replyTextareaRef={replyTextareaRef}
+                    insertEmojiAtCaretReply={insertEmojiAtCaretReply}
+                    handleReplySubmit={handleReplySubmit}
+                    depth={1}
+                  />
+
+                  {replyingId === comment.id && (
+                    <div className="mt-4 pt-6">
+                      <CommentForm
+                        authorName={replyAuthorName}
+                        setAuthorName={setReplyAuthorName}
+                        authorEmail={replyAuthorEmail}
+                        setAuthorEmail={setReplyAuthorEmail}
+                        password={replyPassword}
+                        setPassword={setReplyPassword}
+                        content={replyContent}
+                        setContent={setReplyContent}
+                        errors={replyErrors}
+                        loading={replyLoading}
+                        textareaRef={replyTextareaRef}
+                        insertEmojiAtCaret={insertEmojiAtCaretReply}
+                        onSubmit={handleReplySubmit}
+                        onCancel={() => {
+                          setReplyingId(null);
+                          setReplyAuthorName("");
+                          setReplyAuthorEmail("");
+                          setReplyContent("");
+                          setReplyPassword("");
+                          setReplyErrors({});
                         }}
-                        className="flex-1 sm:flex-none h-9"
-                      >
-                        취소
-                      </Button>
+                      />
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
           </>
         )}
       </div>

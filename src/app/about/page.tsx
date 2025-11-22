@@ -2,7 +2,7 @@ import Container from "../../components/ui/Container";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 via-purple-50/20 to-white dark:from-gray-900 dark:via-purple-900/10 dark:to-black">
+    <div className="min-h-screen bg-linear-to-br surface">
       <Container>
         <div className="py-12 sm:py-16 px-4">
           {/* Hero Section */}
@@ -13,7 +13,7 @@ export default function AboutPage() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              개인 블로그
+              Blog
             </h1>
             
             <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">

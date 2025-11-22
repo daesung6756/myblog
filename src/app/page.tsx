@@ -68,9 +68,9 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-200px)] flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-[calc(100vh-200px)] flex items-center justify-center overflow-hidden surface">
       {/* 그라데이션 배경 */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20" />
+      <div className="absolute inset-0 bg-linear-to-br" />
       
       {/* 애니메이션 도형들 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -83,10 +83,10 @@ export default function Home() {
         {/* 타이틀 */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-fade-in">
-            BLog
+            비로그
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-400 font-light px-4">
-            하루 하나의 기록
+            최소 하루 하나의 기록
           </p>
         </div>
 
@@ -114,19 +114,19 @@ export default function Home() {
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto mt-12 sm:mt-16">
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
             <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">
               {stats.posts > 0 ? formatNumber(stats.posts) : "0"}
             </div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">포스트</div>
           </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
             <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
               {stats.tags > 0 ? formatNumber(stats.tags) : "0"}
             </div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">태그</div>
           </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700/50 hover:scale-105 hover:shadow-xl transition-all">
             <div className="text-2xl sm:text-3xl font-bold text-pink-600 dark:text-pink-400">
               {stats.views > 0 ? formatNumber(stats.views) : "0"}
             </div>

@@ -1,16 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-
-// Service Role Key를 사용하여 RLS 우회
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 
 
 export async function POST(request: NextRequest) {
   try {
+    // Obtain RequestCookies helper for auth; avoid logging raw cookie values.
+    let nextCookiesObj: any = null;
+    try {
+      nextCookiesObj = await cookies();
+    } catch (e) {
+      console.error('[upload-image/POST] cookies() invocation failed');
+    }
+
+    // Authenticate the request: require a logged-in session
+    const authClient = createRouteHandlerClient({ cookies: () => nextCookiesObj, headers: () => headers() });
+    const { data: { session } } = await authClient.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
@@ -34,8 +46,8 @@ export async function POST(request: NextRequest) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `images/${fileName}`;
 
-    // Supabase Storage에 업로드
-    const { data, error } = await supabase.storage
+    // Supabase Storage에 업로드 (서버 admin 클라이언트 사용)
+    const { data, error } = await supabaseAdmin.storage
       .from('blog-images')
       .upload(filePath, file, {
         contentType: 'image/jpeg',
@@ -48,11 +60,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Public URL 가져오기
-    const { data: { publicUrl } } = supabase.storage
+    const { data: publicData } = supabaseAdmin.storage
       .from('blog-images')
       .getPublicUrl(filePath);
 
-    return NextResponse.json({ publicUrl });
+    return NextResponse.json({ publicUrl: publicData.publicUrl });
   } catch (error: any) {
     console.error('이미지 업로드 실패:', error);
     return NextResponse.json(

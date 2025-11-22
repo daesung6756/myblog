@@ -17,11 +17,12 @@ const notoSansKR = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "비로그",
   description: "Blog",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default async function RootLayout({
@@ -38,9 +39,16 @@ export default async function RootLayout({
       <body
         className={`${notoSansKR.variable} font-sans antialiased touch-manipulation`}
       >
-        {/* Initialize theme before React hydrates to avoid FOUC */}
+        {/* Initialize theme before React hydrates to avoid FOUC/hydration mismatch.
+            We set the class based on the server-side value first so the client
+            always matches the SSR HTML. Then fall back to reading cookie/localStorage
+            to respect client-side changes. */}
         <Script id="init-theme" strategy="beforeInteractive">
-          {`(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else if(t==='light')document.documentElement.classList.remove('dark');}catch(e){}})();`}
+          {`(function(){try{` +
+            (serverThemeIsDark
+              ? `document.documentElement.classList.add('dark');`
+              : `document.documentElement.classList.remove('dark');`) +
+            `var m=document.cookie.match(/(^|;)\\s*theme=([^;]+)/);var t=m?decodeURIComponent(m[2]):localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else if(t==='light')document.documentElement.classList.remove('dark');}catch(e){} })();`}
         </Script>
         <AuthProvider>
           <ThemeProvider />

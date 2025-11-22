@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import timeAgo from "@/lib/timeAgo";
 
 interface Post {
   id: string;
@@ -45,17 +46,7 @@ export default function RecentPosts({ limit = 5, showViewCount = true }: RecentP
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) return "오늘";
-    if (days === 1) return "어제";
-    if (days < 7) return `${days}일 전`;
-    if (days < 30) return `${Math.floor(days / 7)}주 전`;
-    if (days < 365) return `${Math.floor(days / 30)}개월 전`;
-    return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+    return timeAgo(dateString as string);
   };
 
   if (loading) {
@@ -122,7 +113,7 @@ export default function RecentPosts({ limit = 5, showViewCount = true }: RecentP
                 >
                   {index + 1}
                 </span>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">
+                <h3 className="text-base sm:text-lg font-semibold dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">
                   {post.title}
                 </h3>
               </div>

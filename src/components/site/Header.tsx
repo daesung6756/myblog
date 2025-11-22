@@ -3,6 +3,7 @@ import Link from "next/link";
 import useStore from "../../store/useStore";
 import { useAuth } from "../AuthProvider";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import MicrositeNav from "./MicrositeNav";
 import ScrollProgress from "../ScrollProgress";
 import { Button } from "../ui/button";
@@ -11,16 +12,32 @@ import { Switch } from "../ui/switch";
 export default function Header() {
   const theme = useStore((s) => s.theme);
   const toggleTheme = useStore((s) => s.toggleTheme);
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const pathname = usePathname() || "";
+  const isAdminPath = pathname.startsWith("/admin");
+  const isAdminLoginPath = pathname === "/admin/login";
+
+  // Hide the login link in the header when on admin routes (except the
+  // explicit admin login page). This avoids a UI flash where the header
+  // shows a '로그인' button while the admin layout is still verifying
+  // the server-side session and rendering a loading screen.
+  const hideLoginLinkOnAdmin = isAdminPath && !isAdminLoginPath;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const toggleBg =
+    theme === "dark"
+      ? "bg-linear-to-br from-purple-900 to-purple-700"
+      : "bg-linear-to-br from-amber-400 to-orange-400";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md dark:bg-gray-900/80 shadow-sm" style={{ borderBottomColor: 'var(--border)' }}>
+
       <ScrollProgress />
       {/* Top bar - Microsite links - Hidden on mobile */}
       <div className="hidden md:block">
@@ -63,17 +80,19 @@ export default function Header() {
               </Button>
             </>
           ) : (
-            <Link href="/admin/login">
-              <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 transition-all">
-                로그인
-              </Button>
-            </Link>
+            !hideLoginLinkOnAdmin && (
+              <Link href="/admin/login">
+                <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 transition-all">
+                  로그인
+                </Button>
+              </Link>
+            )
           )}
           {mounted && (
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="relative ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 bg-linear-to-br from-amber-400 to-orange-400 dark:from-[#071032] dark:to-[#2b1b44] shadow-lg"
+              className={`relative ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 ${toggleBg} shadow-lg`}
             >
               <span className="text-lg">
                 {theme === "dark" ? "🌙" : "☀️"}
@@ -88,7 +107,7 @@ export default function Header() {
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-95 bg-linear-to-br from-amber-400 to-orange-400 dark:from-[#071032] dark:to-[#2b1b44] shadow-lg"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-95 ${toggleBg} shadow-lg`}
             >
               <span className="text-base">
                 {theme === "dark" ? "🌙" : "☀️"}
@@ -156,13 +175,15 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <Link 
-                href="/admin/login" 
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-base font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400 transition-all active:scale-95"
-              >
-                로그인
-              </Link>
+              !hideLoginLinkOnAdmin && (
+                <Link 
+                  href="/admin/login" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-base font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400 transition-all active:scale-95"
+                >
+                  로그인
+                </Link>
+              )
             )}
           </nav>
         </div>

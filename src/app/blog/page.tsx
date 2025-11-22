@@ -72,23 +72,23 @@ export default function BlogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+      <div className="min-h-screen bg-linear-to-b">
         <Container>
           <div className="py-8 sm:py-12 px-4">
             <div className="mb-8 sm:mb-12 text-center space-y-3 sm:space-y-4">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Blog
+                Blog 
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
+              <p className="text-sm sm:text-base max-w-2xl mx-auto px-4">
                 하루 하나의 기록
               </p>
             </div>
             <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 animate-pulse">
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                <div key={i} className="backdrop-blur-sm rounded-2xl p-6 border animate-pulse">
+                  <div className="h-6 rounded w-3/4 mb-3"></div>
+                  <div className="h-4 rounded w-full mb-2"></div>
+                  <div className="h-4 rounded w-2/3"></div>
                 </div>
               ))}
             </div>
@@ -99,7 +99,7 @@ export default function BlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-linear-to-b">
       <Container>
         <div className="py-8 sm:py-12 px-4">
           {/* 페이지 헤더 */}

@@ -100,7 +100,7 @@ export default function ContactPage() {
             <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="문의 내용을 입력하세요" required />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 justify-end">
             <Button type="submit" disabled={loading || !canSubmit} className="bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
               {loading ? "전송 중..." : "문의 보내기"}
             </Button>

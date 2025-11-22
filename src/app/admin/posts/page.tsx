@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import Container from "../../../components/ui/Container";
+import confirm from "@/lib/confirm";
 import Link from "next/link";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -53,15 +54,28 @@ export default function AdminPostsPage() {
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`"${title}" 포스트를 삭제하시겠습니까?`)) return;
+    if (!(await confirm(`"${title}" 포스트를 삭제하시겠습니까?`))) return;
 
-    const { error } = await supabase.from("posts").delete().eq("id", id);
+    try {
+      const res = await fetch("/api/admin/posts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id }),
+      });
 
-    if (error) {
-      alert("삭제에 실패했습니다.");
-    } else {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error("delete post failed", data);
+        alert("삭제에 실패했습니다.");
+        return;
+      }
+
       alert("삭제되었습니다.");
       fetchPosts();
+    } catch (err) {
+      console.error(err);
+      alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -195,7 +209,11 @@ export default function AdminPostsPage() {
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border p-4 dark:border-zinc-700 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{post.title}</h3>
+                    <h3 className="font-semibold truncate">
+                      <Link href={post.slug ? `/blog/${post.slug}` : `#`} className="inline-block w-full">
+                        {post.title}
+                      </Link>
+                    </h3>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
                       /{post.slug} · 조회 {post.views || 0}
                     </p>

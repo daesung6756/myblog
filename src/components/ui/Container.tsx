@@ -1,5 +1,10 @@
 export default function Container({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <div className="mx-auto max-w-[1440px] px-4">{children}</div>;
+  // Ensure the container blends with surrounding surfaces in dark mode
+  return (
+    <div className="mx-auto max-w-[1440px] px-4 bg-transparent dark:bg-(--card)">
+      {children}
+    </div>
+  );
 }

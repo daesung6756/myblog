@@ -18,7 +18,7 @@ export default function PostCard({
       <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
       
       <div className="relative z-10">
-        <h3 className="text-lg sm:text-xl font-bold mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+        <h3 className="text-lg sm:text-xl font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
           <Link href={`/blog/${slug}`} className="hover:underline">
             {title}
           </Link>

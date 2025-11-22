@@ -1,5 +1,14 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 // Use server-side upload/compression (Editor.js upload route)
 
 type Uploaded = { url: string; name: string };
@@ -11,6 +20,8 @@ export default function AdminImageUploader() {
   const [uploaded, setUploaded] = useState<Uploaded[]>([]);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
 
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     setError(null);
@@ -88,9 +99,13 @@ export default function AdminImageUploader() {
   function copyToClipboard(url: string) {
     try {
       void navigator.clipboard.writeText(url);
-      // small UI feedback could be added
+      // show dialog confirmation
+      setCopyMessage("클립보드에 복사되었습니다.");
+      setCopyDialogOpen(true);
     } catch (e) {
       console.error(e);
+      setCopyMessage("복사에 실패했습니다.");
+      setCopyDialogOpen(true);
     }
   }
 
@@ -194,6 +209,17 @@ export default function AdminImageUploader() {
           {uploaded.length === 0 ? <div className="text-sm text-zinc-500">업로드된 이미지가 없습니다.</div> : null}
         </div>
       </div>
+      <AlertDialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>알림</AlertDialogTitle>
+            <AlertDialogDescription>{copyMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setCopyDialogOpen(false)}>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

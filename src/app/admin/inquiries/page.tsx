@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Container from "@/components/ui/Container";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import confirm from "@/lib/confirm";
 
 type Inquiry = {
   id: string;
@@ -90,7 +91,7 @@ export default function AdminInquiriesPage() {
                 <div className="mt-3 text-sm text-zinc-700 dark:text-zinc-200 whitespace-pre-wrap">{it.message}</div>
                 <div className="mt-3 flex gap-2">
                   <Button size="sm" variant="outline" onClick={async () => {
-                    if (!confirm('이 문의를 삭제하시겠습니까?')) return;
+                    if (!(await confirm('이 문의를 삭제하시겠습니까?'))) return;
                     setActionLoading(it.id);
                     try {
                       const res = await fetch('/api/inquiries', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id }) });

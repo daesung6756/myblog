@@ -10,7 +10,7 @@ type Params = { params: { slug: string } };
 export const revalidate = 60; // ISR: 60초마다 재검증
 
 export default async function PostPage({ params }: Params) {
-  const { slug } = params;
+  const { slug } = await params;
 
   const { data: post, error } = await supabase
     .from('posts')
@@ -37,7 +37,7 @@ export default async function PostPage({ params }: Params) {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-linear-to-b ">
       <Container>
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-8 sm:py-12">
           {/* 좌측: 광고 영역 (데스크톱에서 1/4) */}

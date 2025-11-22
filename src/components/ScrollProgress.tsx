@@ -32,7 +32,7 @@ export default function ScrollProgress() {
   }, []);
 
   return (
-    <div className="absolute left-0 bottom-0 h-1 w-full bg-gray-200/50 dark:bg-gray-800/50 overflow-hidden">
+    <div className="absolute left-0 bottom-0 h-1 w-full  dark:bg-slate-900 overflow-hidden">
       <div
         ref={barRef}
         className="h-full origin-left bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 transition-transform duration-300 ease-out"
