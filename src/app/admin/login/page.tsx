@@ -7,7 +7,7 @@ export default async function LoginPage() {
   // Server-side: check if a session exists and redirect to admin posts.
   // Use the request-scoped `cookies()` and `headers()` helpers directly
   // (they are sync functions in the App Router) to avoid type mismatches
-  const nextCookies = cookies();
+  const nextCookies = await cookies();
   const cookieMethods = {
     getAll: () => nextCookies.getAll().map(c => ({ name: c.name, value: c.value })),
     // setAll is a no-op in this server component (we only read session here)
