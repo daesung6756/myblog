@@ -1,28 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClientWithAccess, fetchUserFromAccess, refreshAuthTokens } from '@/lib/request-supabase';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
 
-    // Acquire cookies/headers for route client
     let nextCookiesObj: any = null;
     try {
       nextCookiesObj = await cookies();
     } catch (e) {
       // ignore
     }
-    const cookieMethods = {
-      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
-      setAll: async (_setCookies: any[]) => { /* noop */ },
-    };
-    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
+    const access = nextCookiesObj?.get('sb-access-token')?.value;
+    const refresh = nextCookiesObj?.get('sb-refresh-token')?.value;
 
-    // Check session / user
-    const { data: sessionData } = await routeSupabase.auth.getSession();
-    const user = (sessionData as any)?.session?.user;
+    let routeSupabase = createClientWithAccess(access);
+    const user = await fetchUserFromAccess(access);
     if (!user) {
+      // try refresh once
+      if (refresh) {
+        const tokens = await refreshAuthTokens(refresh);
+        if (tokens?.access_token) {
+          const res = NextResponse.json({ error: null });
+          try {
+            res.cookies.set('sb-access-token', tokens.access_token, { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+            if (tokens.refresh_token) res.cookies.set('sb-refresh-token', tokens.refresh_token, { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+            if (tokens.expires_at) res.cookies.set('sb-expires-at', String(tokens.expires_at), { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+          } catch (e) {
+            console.error('[api/admin/posts] failed to set refreshed cookies', e);
+          }
+          routeSupabase = createClientWithAccess(tokens.access_token);
+        }
+      }
+    }
+    const userAfter = await fetchUserFromAccess(access);
+    if (!userAfter) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

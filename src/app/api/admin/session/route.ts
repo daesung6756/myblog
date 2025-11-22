@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { fetchUserFromAccess, refreshAuthTokens } from '@/lib/request-supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,20 +10,37 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const cookieMethods = {
-      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
-      setAll: async (_setCookies: any[]) => { /* noop - responses handle cookies separately */ },
-    };
-    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
-    const { data: sessionData, error } = await routeSupabase.auth.getSession();
-    const session = (sessionData as any)?.session;
-    if (error) {
-      console.error('[api/admin/session] getSession error:', error.message || error);
+
+    const access = nextCookiesObj?.get('sb-access-token')?.value;
+    const refresh = nextCookiesObj?.get('sb-refresh-token')?.value;
+
+    let user = await fetchUserFromAccess(access);
+
+    // If access is invalid, try refreshing once
+    if (!user && refresh) {
+      const tokens = await refreshAuthTokens(refresh);
+      if (tokens?.access_token) {
+        // apply cookies via NextResponse so client receives new tokens
+        const res = NextResponse.json({
+          hasSession: true,
+          user: { id: null, role: null },
+        });
+        try {
+          res.cookies.set('sb-access-token', tokens.access_token, { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+          if (tokens.refresh_token) res.cookies.set('sb-refresh-token', tokens.refresh_token, { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+          if (tokens.expires_at) res.cookies.set('sb-expires-at', String(tokens.expires_at), { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+        } catch (e) {
+          console.error('[api/admin/session] failed to set refreshed cookies', e);
+        }
+        // attempt to fetch user with new token
+        user = await fetchUserFromAccess(tokens.access_token);
+        if (user) return res;
+      }
     }
 
     return NextResponse.json({
-      hasSession: !!session,
-      user: session ? { id: session.user.id, role: session.user.app_metadata?.role || null } : null,
+      hasSession: !!user,
+      user: user ? { id: user.id, role: user?.app_metadata?.role || null } : null,
     });
   } catch (e: any) {
     console.error('[api/admin/session] unexpected error', e);
