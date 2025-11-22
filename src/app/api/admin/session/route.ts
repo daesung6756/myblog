@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
@@ -10,7 +10,11 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const cookieMethods = {
+      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
+      setAll: async (_setCookies: any[]) => { /* noop - responses handle cookies separately */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
     const { data: sessionData, error } = await routeSupabase.auth.getSession();
     const session = (sessionData as any)?.session;
     if (error) {

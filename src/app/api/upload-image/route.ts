@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-server';
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate the request: require a logged-in session
-    const authClient = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const authClient = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: nextCookiesObj });
     const { data: { session } } = await authClient.auth.getSession();
 
     if (!session) {

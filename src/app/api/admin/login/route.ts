@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
@@ -48,7 +48,17 @@ export async function POST(request: NextRequest) {
       },
     } as any;
 
-    const routeSupabase = createRouteHandlerClient({ cookies: () => cookieWrapper });
+    const cookieMethods = {
+      getAll: () => {
+        try {
+          return nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : [];
+        } catch (e) {
+          return [];
+        }
+      },
+      setAll: async (_setCookies: any[]) => { /* noop - login route uses cookieWrapper to collect pending cookies and applies them to response */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
     const { data, error } = await routeSupabase.auth.signInWithPassword({
       email,

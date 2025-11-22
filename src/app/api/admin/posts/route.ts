@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,11 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const cookieMethods = {
+      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
+      setAll: async (_setCookies: any[]) => { /* noop */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
     // Check session / user
     const { data: sessionData } = await routeSupabase.auth.getSession();
@@ -57,7 +61,11 @@ export async function PUT(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const cookieMethods = {
+      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
+      setAll: async (_setCookies: any[]) => { /* noop */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
     const { data: sessionData } = await routeSupabase.auth.getSession();
     const user = (sessionData as any)?.session?.user;
@@ -104,7 +112,11 @@ export async function DELETE(request: NextRequest) {
     } catch (e) {
       // ignore
     }
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const cookieMethods = {
+      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
+      setAll: async (_setCookies: any[]) => { /* noop */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
     const { data: sessionData } = await routeSupabase.auth.getSession();
     const user = (sessionData as any)?.session?.user;

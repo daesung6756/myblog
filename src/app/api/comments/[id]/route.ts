@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabase";
-import { createRouteHandlerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
 
@@ -24,7 +24,11 @@ export async function DELETE(
     } catch (e) {
       // ignore
     }
-    const routeSupabase = createRouteHandlerClient({ cookies: () => nextCookiesObj });
+    const cookieMethods = {
+      getAll: () => (nextCookiesObj?.getAll ? nextCookiesObj.getAll().map((c: any) => ({ name: c.name, value: c.value })) : []),
+      setAll: async (_setCookies: any[]) => { /* noop */ },
+    };
+    const routeSupabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: cookieMethods });
 
     // Try to detect admin session using the route handler client so the
     // request cookies (session) are read correctly in the app router.
