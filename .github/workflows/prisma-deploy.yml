@@ -18,12 +18,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Inspect repo
+        run: |
+          echo "Repository root: $(pwd)"
+          ls -la
+          echo "Prisma folder listing:"
+          ls -la prisma || true
+
       - name: Prisma db push (apply schema)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          npx prisma db push --accept-data-loss
-          npx prisma generate
+          npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
+          npx prisma generate --schema=./prisma/schema.prisma
 
       - name: Done
         run: echo "Prisma schema applied to DATABASE_URL"
