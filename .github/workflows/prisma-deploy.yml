@@ -1,0 +1,29 @@
+name: Prisma Deploy to Supabase
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma db push (apply schema)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npx prisma db push --accept-data-loss
+          npx prisma generate
+
+      - name: Done
+        run: echo "Prisma schema applied to DATABASE_URL"
