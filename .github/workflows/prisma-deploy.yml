@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -24,6 +26,19 @@ jobs:
           ls -la
           echo "Prisma folder listing:"
           ls -la prisma || true
+
+      - name: Show Prisma schema
+        run: |
+          echo "---- prisma/schema.prisma (start) ----"
+          if [ -f ./prisma/schema.prisma ]; then
+            sed -n '1,200p' ./prisma/schema.prisma || true
+            echo "---- prisma/schema.prisma (end) ----"
+            wc -c ./prisma/schema.prisma || true
+          else
+            echo "prisma/schema.prisma not found"
+            ls -la prisma || true
+            exit 1
+          fi
 
       - name: Prisma db push (apply schema)
         env:
