@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { cookies } from 'next/headers';
+import { createClientWithAccess, fetchUserFromAccess, refreshAuthTokens, createServiceRoleClient } from '@/lib/request-supabase';
 
 async function sendAdminEmail(payload: { name?: string | null; email: string; subject?: string | null; message: string }) {
   // Optional: send an email to admin when a new inquiry arrives using SendGrid.
@@ -85,8 +87,47 @@ export async function DELETE(request: Request) {
     const { id } = body || {};
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
-    const { error } = await supabase.from("inquiries").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Try request-scoped auth first (cookie-supplied session)
+    try {
+      let nextCookiesObj: any = null;
+      try { nextCookiesObj = await cookies(); } catch(e) {}
+      const access = nextCookiesObj?.get('sb-access-token')?.value;
+      const refresh = nextCookiesObj?.get('sb-refresh-token')?.value;
+      let routeSupabase = createClientWithAccess(access);
+      let user = await fetchUserFromAccess(access);
+      if (!user && refresh) {
+        const tokens = await refreshAuthTokens(refresh);
+        if (tokens?.access_token) {
+          routeSupabase = createClientWithAccess(tokens.access_token);
+          user = await fetchUserFromAccess(tokens.access_token);
+        }
+      }
+
+      if (user) {
+        const { error } = await routeSupabase.from("inquiries").delete().eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
+    } catch (e) {
+      console.error('[api/inquiries] auth-scoped delete error', e);
+    }
+
+    // Fallback to service-role server-side delete when allowed
+    const allowFallback = process.env.NODE_ENV !== 'production' || String(process.env.ALLOW_SERVICE_ROLE_FALLBACK) === 'true';
+    if (allowFallback) {
+      try {
+        const srv = createServiceRoleClient();
+        const { error } = await srv.from('inquiries').delete().eq('id', id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        try {
+          (await import('@/lib/audit')).logAudit({ route: '/api/inquiries', method: 'DELETE', action: 'delete', resource: 'inquiries', id, user: null, reason: 'service_role_fallback' });
+        } catch (e) {}
+        return NextResponse.json({ ok: true });
+      } catch (e: any) {
+        console.error('[api/inquiries] service-role fallback delete failed', e);
+        return NextResponse.json({ error: String(e) }, { status: 500 });
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
@@ -100,10 +141,49 @@ export async function PATCH(request: Request) {
     const { id, responded } = body || {};
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
-    const { data, error } = await supabase.from("inquiries").update({ responded: !!responded }).eq("id", id).select();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Try request-scoped auth first
+    try {
+      let nextCookiesObj: any = null;
+      try { nextCookiesObj = await cookies(); } catch(e) {}
+      const access = nextCookiesObj?.get('sb-access-token')?.value;
+      const refresh = nextCookiesObj?.get('sb-refresh-token')?.value;
+      let routeSupabase = createClientWithAccess(access);
+      let user = await fetchUserFromAccess(access);
+      if (!user && refresh) {
+        const tokens = await refreshAuthTokens(refresh);
+        if (tokens?.access_token) {
+          routeSupabase = createClientWithAccess(tokens.access_token);
+          user = await fetchUserFromAccess(tokens.access_token);
+        }
+      }
 
-    return NextResponse.json({ ok: true, data });
+      if (user) {
+        const { data, error } = await routeSupabase.from('inquiries').update({ responded: !!responded }).eq('id', id).select();
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true, data });
+      }
+    } catch (e) {
+      console.error('[api/inquiries] auth-scoped patch error', e);
+    }
+
+    // Fallback to service-role when allowed
+    const allowFallback = process.env.NODE_ENV !== 'production' || String(process.env.ALLOW_SERVICE_ROLE_FALLBACK) === 'true';
+    if (allowFallback) {
+      try {
+        const srv = createServiceRoleClient();
+        const { data, error } = await srv.from('inquiries').update({ responded: !!responded }).eq('id', id).select();
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        try {
+          (await import('@/lib/audit')).logAudit({ route: '/api/inquiries', method: 'PATCH', action: 'update', resource: 'inquiries', id, user: null, reason: 'service_role_fallback', extra: { responded: !!responded } });
+        } catch (e) {}
+        return NextResponse.json({ ok: true, data });
+      } catch (e: any) {
+        console.error('[api/inquiries] service-role fallback patch failed', e);
+        return NextResponse.json({ error: String(e) }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "서버 오류" }, { status: 500 });
   }

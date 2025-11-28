@@ -22,40 +22,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // rendering the login page itself). Keep the hook call unconditional so
   // hook order is stable across renders.
   useEffect(() => {
+    console.log('[AdminLayout] pathname=', pathname, 'isLoginPath=', isLoginPath, 'loading=', loading, 'user=', user);
     // If the client navigates to the admin root, rewrite to /admin/posts so
-    // client-side transitions mirror the server-side redirect. This prevents
-    // the URL from changing while the previous page content remains visible
-    // until a full reload.
+    // client-side transitions mirror the server-side redirect.
     if (isAdminRoot) {
       router.replace('/admin/posts');
       return;
     }
-    if (isLoginPath) return;
-    if (!loading && !user) {
-      // Before redirecting to `/admin/login`, confirm the server
-      // believes there is no session. This avoids a race where the
-      // server has just set an HttpOnly session cookie and redirects
-      // to `/admin/posts` while the client (with no session yet)
-      // redirects back to `/admin/login`.
-      let cancelled = false;
-      const checkServerSession = async () => {
-        try {
-          const res = await fetch('/api/admin/session', { credentials: 'include' });
-          const data = await res.json();
-          if (cancelled) return;
-          if (!data?.hasSession) {
-            router.replace('/admin/login');
-          }
-        } catch (e) {
-          if (!cancelled) router.replace('/admin/login');
-        }
-      };
+    // Do not perform a client-side redirect to `/admin/login` here. Rely on
+    // the server-side checks and `AuthProvider` to determine session state.
+    // This avoids client/server redirect races that cause the ping-pong.
+  }, [isAdminRoot, router]);
 
-      // Run the check (no extra delay). Return a cleanup to cancel.
-      checkServerSession();
-      return () => {
-        cancelled = true;
-      };
+  // If we're on an admin page (not the login page) and we've resolved
+  // auth state (loading === false) but have no user, send the client to
+  // the login page so the login form is visible. Keep a tiny delay to
+  // avoid races with in-flight navigation.
+  useEffect(() => {
+    if (!isLoginPath && !loading && !user) {
+      const t = setTimeout(() => {
+        router.replace('/admin/login');
+      }, 50);
+      return () => clearTimeout(t);
     }
   }, [isLoginPath, loading, user, router]);
 
@@ -64,7 +52,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isLoginPath && (loading || !user)) {
     return (
       <Container>
-        <div className="py-12 px-4 text-center">로딩 중...</div>
+        <div className="py-12 px-4 text-center">
+          <div>로딩 중...</div>
+          <div className="mt-4 text-left text-sm text-zinc-600 dark:text-zinc-400">상태 디버그:</div>
+          <pre className="mt-2 p-3 text-xs bg-gray-100 dark:bg-zinc-800 rounded overflow-auto text-left">{JSON.stringify({ pathname, isLoginPath, loading, user: user ? '[object]' : null }, null, 2)}</pre>
+          <div className="mt-2 text-xs text-zinc-500">(이 정보 복사해서 공유해 주세요)</div>
+        </div>
       </Container>
     );
   }

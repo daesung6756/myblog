@@ -1,9 +1,20 @@
-export function timeAgo(input: string | Date | number) {
+export function timeAgo(input?: string | Date | number | null) {
   const now = Date.now()
-  const then = typeof input === "string" ? new Date(input).getTime() : typeof input === "number" ? input : input.getTime()
+  if (input == null) return "알 수 없음"
+
+  let then: number
+  if (typeof input === 'string') {
+    then = new Date(input).getTime()
+  } else if (typeof input === 'number') {
+    then = input
+  } else if (input instanceof Date) {
+    then = input.getTime()
+  } else {
+    return '알 수 없음'
+  }
   const diff = Math.floor((now - then) / 1000) // seconds
 
-  if (isNaN(then)) return "알 수 없음"
+  if (isNaN(then) || !isFinite(then)) return "알 수 없음"
 
   const units: [number, string, string][] = [
     [60, "초", "초 전"],
@@ -16,6 +27,7 @@ export function timeAgo(input: string | Date | number) {
 
   let seconds = diff
   if (seconds < 5) return "방금 전"
+  if (seconds < 0) return "방금 전"
 
   for (let i = 0; i < units.length; i++) {
     const [limit, _name, suffix] = units[i]

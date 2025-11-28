@@ -15,7 +15,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install dependencies
         run: npm ci
@@ -26,6 +26,55 @@ jobs:
           ls -la
           echo "Prisma folder listing:"
           ls -la prisma || true
+
+      - name: Ensure DATABASE_URL secret is provided
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "ERROR: DATABASE_URL secret is not set in this repository."
+            echo "Please add it under Settings → Secrets → Actions with the name 'DATABASE_URL'."
+            exit 1
+          fi
+          echo "DATABASE_URL secret present (length: ${#DATABASE_URL})"
+
+      - name: Test DB connection (prisma db pull)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PRISMA_LOG_LEVEL: debug
+        run: |
+          echo "Testing DB connection with prisma db pull..."
+          npx prisma --version
+          npx prisma db pull --schema=./prisma/schema.prisma || true
+
+      - name: CI network diagnostics (DNS / TCP / psql)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSLMODE: require
+        run: |
+          set -eux
+          echo "--- System info ---"
+          uname -a || true
+          node -v || true
+          npx prisma --version || true
+
+          echo "--- Install diagnostic packages ---"
+          sudo apt-get update -y
+          sudo apt-get install -y dnsutils netcat-openbsd postgresql-client || true
+
+          echo "--- Resolve DNS (system / 1.1.1.1 / 8.8.8.8) ---"
+          echo "system resolver:"; getent hosts db.clgeftofunbnvcfhcgkx.supabase.co || true
+          echo "cloudflare:"; dig +short db.clgeftofunbnvcfhcgkx.supabase.co @1.1.1.1 || true
+          echo "google:"; dig +short db.clgeftofunbnvcfhcgkx.supabase.co @8.8.8.8 || true
+
+          echo "--- Try TCP connect to hostname (may resolve to A/AAAA) ---"
+          nc -vz -w 5 db.clgeftofunbnvcfhcgkx.supabase.co 5432 || true
+
+          echo "--- Try psql connect (will attempt SSL) ---"
+          # psql can accept a connection string; wrap in quotes
+          psql "$DATABASE_URL" -c "\l" || true
+
+          echo "--- End diagnostics ---"
 
       - name: Show Prisma schema
         run: |

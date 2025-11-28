@@ -44,11 +44,11 @@ export default async function RootLayout({
             always matches the SSR HTML. Then fall back to reading cookie/localStorage
             to respect client-side changes. */}
         <Script id="init-theme" strategy="beforeInteractive">
-          {`(function(){try{` +
+          {`(function(){try{window.__INITIAL_THEME = '${serverThemeIsDark ? 'dark' : 'light'}';` +
             (serverThemeIsDark
               ? `document.documentElement.classList.add('dark');`
               : `document.documentElement.classList.remove('dark');`) +
-            `var m=document.cookie.match(/(^|;)\\s*theme=([^;]+)/);var t=m?decodeURIComponent(m[2]):localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else if(t==='light')document.documentElement.classList.remove('dark');}catch(e){} })();`}
+            `}catch(e){} })();`}
         </Script>
         <AuthProvider>
           <ThemeProvider />

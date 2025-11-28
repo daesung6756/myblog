@@ -25,16 +25,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // default, so call our server endpoint which returns session/user info.
     (async () => {
       try {
+        console.log('[AuthProvider] checking /api/admin/session');
         const res = await fetch('/api/admin/session', { credentials: 'include' });
         const data = await res.json();
+        console.log('[AuthProvider] session response', data);
         if (data?.hasSession && data.user) {
-          // Create a minimal user-like object so components that expect
-          // `user` truthiness behave correctly.
           setUser({ id: data.user.id, app_metadata: { role: data.user.role } } as unknown as User);
         } else {
           setUser(null);
         }
       } catch (e) {
+        console.error('[AuthProvider] session check failed', e);
         setUser(null);
       } finally {
         setLoading(false);

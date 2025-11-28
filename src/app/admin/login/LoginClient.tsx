@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { signIn } from 'next-auth/react'
 import Container from "../../../components/ui/Container";
 import { useRouter } from "next/navigation";
 import { Input } from "../../../components/ui/input";
@@ -32,19 +33,29 @@ export default function LoginPageClient() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/login', {
+      // POST to the server-side Supabase login route which sets the
+      // canonical Supabase cookies and the `admin-session` HttpOnly cookie.
+      const resp = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: 'include',
+        credentials: 'same-origin',
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        showDialog('오류', data.error || '로그인 실패');
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        showDialog('오류', '로그인 실패: ' + (body?.error || resp.statusText || 'unknown'));
       } else {
-        // Full navigation to ensure server session cookie is used.
-        window.location.href = '/admin/posts';
+        // If the route returned a redirect, navigate there; otherwise
+        // navigate to the admin posts list by default.
+        try {
+          if (resp.redirected && resp.url) {
+            window.location.href = resp.url;
+          } else {
+            window.location.href = '/admin/posts';
+          }
+        } catch (e) {
+          window.location.href = '/admin/posts';
+        }
       }
     } catch (error: any) {
       showDialog('오류', '로그인 실패: ' + (error?.message || String(error)));

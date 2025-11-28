@@ -11,7 +11,9 @@ type Store = {
 };
 
 const useStore = create<Store>((set, get) => ({
+  // Prefer a server-provided initial theme (window.__INITIAL_THEME) when present.
   theme:
+    (typeof window !== "undefined" && (window as any).__INITIAL_THEME as Theme) ||
     (typeof window !== "undefined" && (localStorage.getItem("theme") as Theme)) ||
     (typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? ("dark" as Theme) : ("light" as Theme)),
   toggleTheme() {

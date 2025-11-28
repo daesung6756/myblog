@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { supabase } from "@/lib/supabase";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClientWithAccess, fetchUserFromAccess, refreshAuthTokens } from '@/lib/request-supabase';
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
@@ -33,12 +31,34 @@ export async function DELETE(
     // one-time refresh and retry.
     let routeSupabase = createClientWithAccess(access);
 
+    // If a server-side admin session exists, treat this request as an
+    // admin and use the service-role client so admin deletes/updates work
+    // even when access/refresh tokens are missing or short.
     let isAdmin = false;
     try {
-      const user = await fetchUserFromAccess(access);
-      isAdmin = !!(user && (user.user_metadata?.is_admin || user.app_metadata?.role === 'admin'));
+      const adminCookie = nextCookiesObj?.get('admin-session')?.value;
+      if (adminCookie) {
+        const admin = (await import('@/lib/admin-session')).verifyAdminSession(adminCookie);
+        if (admin) {
+          const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (serviceRole) {
+            const adminClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '', serviceRole);
+            routeSupabase = adminClient as any;
+            isAdmin = true;
+          }
+        }
+      }
     } catch (e) {
-      console.error('[comments/[id]/DELETE] auth check failed:', e);
+      // ignore and fall back to token-based check
+    }
+
+    if (!isAdmin) {
+      try {
+        const user = await fetchUserFromAccess(access);
+        isAdmin = !!(user && (user.user_metadata?.is_admin || user.app_metadata?.role === 'admin'));
+      } catch (e) {
+        console.error('[comments/[id]/DELETE] auth check failed:', e);
+      }
     }
 
     if (!isAdmin && !password) {
@@ -111,6 +131,8 @@ export async function DELETE(
               if (ares.error) {
                 console.error('[comments/[id]/DELETE] adminClient update error:', ares.error);
               } else {
+                try { (await import('@/lib/audit')).logAudit({ route: '/api/comments/[id]', method: 'DELETE', action: 'admin-update', resource: 'comments', id, user: null, reason: 'service_role_admin_fallback' }); } catch (e) {}
+                console.log('[comments/[id]/DELETE] service-role/adminClient update succeeded (admin fallback) id=', id);
                 updateData = ares.data;
                 updateError = null;
               }

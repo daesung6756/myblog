@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { cookies } from 'next/headers';
+import { createClientWithAccess, createServiceRoleClient, refreshAuthTokens, fetchUserFromAccess } from '@/lib/request-supabase';
 import sharp from "sharp";
 
 export async function POST(request: NextRequest) {
@@ -28,14 +30,100 @@ export async function POST(request: NextRequest) {
     const originalName = file.name.replace(/\.[^/.]+$/, ""); // 확장자 제거
     const fileName = `${timestamp}-${originalName}.webp`;
 
-    // Supabase Storage에 업로드
-    const { data, error } = await supabase.storage
-      .from("blog-images") // 스토리지 버킷 이름
-      .upload(fileName, compressedBuffer, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: "image/webp",
-      });
+    // 먼저 요청 스코프 인증이 있으면 그 클라이언트로 시도
+    let usedClient = supabase;
+    let uploadResult: any = null;
+    let uploadError: any = null;
+
+    try {
+      let nextCookiesObj: any = null;
+      try { nextCookiesObj = await cookies(); } catch (e) {}
+      // If admin-session cookie exists, prefer service-role upload immediately
+        // If admin-session cookie exists, prefer service-role upload immediately
+        try {
+          const adminCookieDirect = nextCookiesObj?.get('admin-session')?.value;
+          if (adminCookieDirect) {
+            const admin = (await import('@/lib/admin-session')).verifyAdminSession(adminCookieDirect);
+            if (admin) {
+              const srv = createServiceRoleClient();
+              usedClient = srv;
+              const res = await srv.storage.from("blog-images").upload(fileName, compressedBuffer, {
+                cacheControl: "3600",
+                upsert: false,
+                contentType: "image/webp",
+              });
+              uploadResult = res;
+              uploadError = res.error;
+            }
+          }
+        } catch (e) {
+          // continue to normal flow if admin-session check fails
+        }
+      // Try request-scoped client if cookies appear (we already fetched cookies above)
+      const access = nextCookiesObj?.get('sb-access-token')?.value;
+      const refresh = nextCookiesObj?.get('sb-refresh-token')?.value;
+
+      if (access) {
+        const routeSupabase = createClientWithAccess(access);
+        // attempt upload with access-scoped client
+        usedClient = routeSupabase;
+        const res = await routeSupabase.storage
+          .from("blog-images")
+          .upload(fileName, compressedBuffer, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: "image/webp",
+          });
+        uploadResult = res;
+        uploadError = res.error;
+      } else if (refresh) {
+        // try one-time refresh and retry
+        const tokens = await refreshAuthTokens(refresh);
+        if (tokens?.access_token) {
+          const routeSupabase = createClientWithAccess(tokens.access_token);
+          usedClient = routeSupabase;
+          const res = await routeSupabase.storage
+            .from("blog-images")
+            .upload(fileName, compressedBuffer, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: "image/webp",
+            });
+          uploadResult = res;
+          uploadError = res.error;
+        }
+      }
+    } catch (e) {
+      // swallow and allow fallback
+      uploadError = e;
+      uploadResult = null;
+    }
+
+    // If the request-scoped attempt failed due to auth/permission and we allow
+    // server-side fallback, try using the service-role client to ensure admin
+    // uploads succeed in environments where client sessions might be broken.
+    if ((!uploadResult || uploadError) && (process.env.NODE_ENV !== 'production' || String(process.env.ALLOW_SERVICE_ROLE_FALLBACK) === 'true')) {
+      try {
+        const srv = createServiceRoleClient();
+        usedClient = srv;
+        const res = await srv.storage.from("blog-images").upload(fileName, compressedBuffer, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: "image/webp",
+        });
+        uploadResult = res;
+        uploadError = res.error;
+        if (!uploadError) {
+          console.log('[api/upload] service-role fallback used for image upload:', fileName);
+          try { (await import('@/lib/audit')).logAudit({ route: '/api/upload', method: 'POST', action: 'upload', resource: 'blog-images', id: fileName, user: null, reason: 'service_role_fallback' }); } catch (e) {}
+        }
+      } catch (e) {
+        uploadError = e;
+      }
+    }
+
+    // After attempts, examine result/error
+    const { data, error } = uploadResult || { data: null, error: uploadError };
 
     if (error) {
       console.error("Upload error:", error);
@@ -45,8 +133,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 공개 URL 가져오기
-    const { data: publicData } = supabase.storage
+    // 공개 URL 가져오기 (사용한 클라이언트 기준)
+    const { data: publicData } = await usedClient.storage
       .from("blog-images")
       .getPublicUrl(fileName);
 

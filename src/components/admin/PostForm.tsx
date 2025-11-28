@@ -223,14 +223,14 @@ export default function PostForm({
                 <span>📝</span>
                 제목
               </label>
-              <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="포스트 제목을 입력하세요" required className="h-12 text-lg border-2" />
+              <Input name="title" value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="포스트 제목을 입력하세요" required className="h-12 text-lg border-2" />
             </div>
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <span>🔗</span>
                 슬러그 (URL)
               </label>
-              <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="post-slug" required className="font-mono text-sm border-2" />
+              <Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="post-slug" required className="font-mono text-sm border-2" />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">URL: /blog/{slug || "post-slug"}</p>
             </div>
             <div>
@@ -245,7 +245,7 @@ export default function PostForm({
                 <span>🏷️</span>
                 태그
               </label>
-              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="태그1, 태그2, 태그3" className="border-2" />
+              <Input name="tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="태그1, 태그2, 태그3" className="border-2" />
             </div>
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -293,14 +293,14 @@ export default function PostForm({
                 <span>📝</span>
                 제목
               </label>
-              <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="포스트 제목을 입력하세요" required className="h-11 sm:h-12 text-base sm:text-lg border-2" />
+              <Input name="title" value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="포스트 제목을 입력하세요" required className="h-11 sm:h-12 text-base sm:text-lg border-2" />
             </div>
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <span>🔗</span>
                 슬러그 (URL)
               </label>
-              <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="post-slug" required className="font-mono text-sm border-2 h-10 sm:h-11" />
+              <Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="post-slug" required className="font-mono text-sm border-2 h-10 sm:h-11" />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">URL: /blog/{slug || "post-slug"}</p>
             </div>
             <div>
@@ -315,7 +315,7 @@ export default function PostForm({
                 <span>🏷️</span>
                 태그
               </label>
-              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="태그1, 태그2, 태그3" className="border-2 h-10 sm:h-11 text-sm sm:text-base" />
+              <Input name="tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="태그1, 태그2, 태그3" className="border-2 h-10 sm:h-11 text-sm sm:text-base" />
             </div>
             <div>
               <div className="mb-2 flex items-center justify-between">
