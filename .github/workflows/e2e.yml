@@ -1,0 +1,78 @@
+name: E2E tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-tests-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      # map repository secrets to the env variables used by the app/tests
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+      # require explicit allow for server-side fallback in CI
+      ALLOW_SERVICE_ROLE_FALLBACK: ${{ secrets.ALLOW_SERVICE_ROLE_FALLBACK }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache node modules and Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Validate CI secrets
+        id: validate-secrets
+        run: |
+          required=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY ADMIN_SESSION_SECRET ALLOW_SERVICE_ROLE_FALLBACK)
+          missing=false
+          for s in "${required[@]}"; do
+            if [ -z "${!s}" ]; then
+              echo "Missing secret: $s"
+              missing=true
+            fi
+          done
+          if [ "$missing" = true ]; then
+            echo "One or more required secrets are missing. Failing the job."; exit 1
+          fi
+
+      - name: Run tests
+        run: |
+          # Ensure Playwright browsers are installed in CI (cache may restore)
+          npx playwright install --with-deps
+          npm run test:e2e
+        continue-on-error: false
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Upload Playwright trace/full logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-fail-logs
+          path: |
+            playwright-report/**
+            tests/e2e/**

@@ -1,0 +1,113 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e6]:
+      - link "더치페이" [ref=e7] [cursor=pointer]:
+        - /url: https://dutch-pay-lemon.vercel.app/
+      - link "PDF 생성기" [ref=e8] [cursor=pointer]:
+        - /url: https://a4-pdf-maker.vercel.app/
+    - generic [ref=e9]:
+      - link "비로그" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e11]:
+        - link "Blog" [ref=e12] [cursor=pointer]:
+          - /url: /blog
+          - text: Blog
+        - link "About" [ref=e13] [cursor=pointer]:
+          - /url: /about
+          - text: About
+        - link "Contact" [ref=e14] [cursor=pointer]:
+          - /url: /contact
+          - text: Contact
+        - link "Admin" [ref=e15] [cursor=pointer]:
+          - /url: /admin/posts
+          - text: Admin
+        - button "로그아웃" [ref=e16]
+        - button "Toggle theme" [ref=e17]:
+          - generic [ref=e18]: ☀️
+  - main [ref=e19]:
+    - generic [ref=e21]:
+      - navigation "Admin tabs" [ref=e23]:
+        - generic [ref=e24]:
+          - link "포스트 관리" [ref=e25] [cursor=pointer]:
+            - /url: /admin/posts
+          - link "문의 관리" [ref=e26] [cursor=pointer]:
+            - /url: /admin/inquiries
+          - link "이미지 관리" [ref=e27] [cursor=pointer]:
+            - /url: /admin/images
+          - link "광고 관리" [ref=e28] [cursor=pointer]:
+            - /url: /admin/ads
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - heading "새 포스트 작성" [level=1] [ref=e36]
+          - paragraph [ref=e37]: 마크다운으로 멋진 포스트를 작성하세요
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]:
+              - generic [ref=e41]:
+                - img [ref=e42]
+                - heading "미리보기" [level=2] [ref=e45]
+              - generic [ref=e46]:
+                - heading "제목을 입력하세요" [level=1] [ref=e47]
+                - generic [ref=e49]: 내용이 없습니다.
+            - generic [ref=e52]:
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - heading "편집" [level=2] [ref=e56]
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - generic [ref=e60]: 📝
+                    - text: 제목
+                  - textbox "포스트 제목을 입력하세요" [ref=e61]
+                - generic [ref=e62]:
+                  - generic [ref=e63]:
+                    - generic [ref=e64]: 🔗
+                    - text: 슬러그 (URL)
+                  - textbox "post-slug" [ref=e65]
+                  - paragraph [ref=e66]: "URL: /blog/post-slug"
+                - generic [ref=e67]:
+                  - generic [ref=e68]:
+                    - generic [ref=e69]: 💬
+                    - text: 요약
+                  - textbox "포스트를 간단히 소개해주세요" [ref=e70]
+                - generic [ref=e71]:
+                  - generic [ref=e72]:
+                    - generic [ref=e73]: 🏷️
+                    - text: 태그
+                  - textbox "태그1, 태그2, 태그3" [ref=e74]
+                - generic [ref=e75]:
+                  - generic [ref=e76]:
+                    - generic [ref=e77]:
+                      - generic [ref=e78]: 📢
+                      - text: 광고 코드 1 (모바일 상단)
+                    - button "기본값" [ref=e79]
+                  - textbox "<script>...</script> 또는 HTML 광고 코드" [ref=e80]: "<div class=\"ad-contact-banner\" style=\"display:block; width:100%; box-sizing:border-box; padding: clamp(12px, 4vw, 20px); border-radius:12px; background: linear-gradient(90deg, #06b6d4, #3b82f6); color:#fff; text-align:center;\"> <p style=\"margin:0 0 8px 0; font-size:clamp(14px,3.5vw,16px); font-weight:700;\">블로그에 광고 배너를 게재</p> <p style=\"margin:0 0 12px 0; font-size:clamp(12px,3vw,14px); opacity:0.95;\">문의는 아래 버튼으로!</p> <a href=\"/contact?topic=advertise\" style=\"display:inline-block; background:#fff; color:#0369a1; padding:8px 16px; border-radius:8px; font-weight:700; text-decoration:none; font-size:clamp(12px,3vw,14px);\">광고 문의하기</a> </div>"
+                - generic [ref=e81]:
+                  - generic [ref=e82]:
+                    - generic [ref=e83]:
+                      - generic [ref=e84]: 📢
+                      - text: 광고 코드 2 (모바일 하단)
+                    - button "기본값" [ref=e85]
+                  - textbox "<script>...</script> 또는 HTML 광고 코드" [ref=e86]: "<a href=\"https://dutch-pay-lemon.vercel.app/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display: block;\"> <picture> <source media=\"(min-width: 1024px)\" srcset=\"https://clgeftofunbnvcfhcgkx.supabase.co/storage/v1/object/public/blog-images/1763692630466-Gemini_Generated_Image_9lk4ll9lk4ll9lk4.webp\" /> <img src=\"https://clgeftofunbnvcfhcgkx.supabase.co/storage/v1/object/public/blog-images/1763693482502-Gemini_Generated_Image_w4p41tw4p41tw4p4.webp\" alt=\"광고 배너\" loading=\"lazy\" style=\"width: 100%; height: auto; max-height: 350px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;\"/> </picture> </a>"
+                - generic [ref=e87]:
+                  - generic [ref=e88]:
+                    - generic [ref=e89]: ✍️
+                    - text: 본문
+                  - generic [ref=e96]: 내용을 입력하세요...
+          - text: 내용을 입력하세요...
+          - generic [ref=e98]:
+            - link "취소" [ref=e99] [cursor=pointer]:
+              - /url: /admin/posts
+              - button "취소" [ref=e100]
+            - button "포스트 생성" [ref=e101]:
+              - img
+              - text: 포스트 생성
+  - contentinfo [ref=e102]:
+    - generic [ref=e103]: © 2025 Leeds. All rights reserved.
+  - button "Open Next.js Dev Tools" [ref=e109] [cursor=pointer]:
+    - img [ref=e110]
+  - alert [ref=e113]
+```

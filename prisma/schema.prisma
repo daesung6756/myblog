@@ -57,3 +57,51 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// Blog models — added to match tables created directly in Supabase
+model Post {
+  id          String    @id @default(dbgenerated()) @db.Uuid
+  title       String
+  slug        String    @unique
+  content     String?
+  summary     String?
+  publishedAt DateTime? @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @db.Timestamptz
+  authorId    String?   @db.Uuid
+  tags        String[]? @db.Text[]
+  views       Int       @default(0)
+
+  comments    Comment[]
+
+  @@index([slug])
+  @@index([publishedAt])
+}
+
+model Comment {
+  id             String   @id @default(dbgenerated()) @db.Uuid
+  postId         String   @db.Uuid
+  authorName     String
+  authorEmail    String
+  content        String
+  passwordHash   String
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  replyTo        String?  @db.Uuid
+  deletedAt      DateTime? @db.Timestamptz
+  deletedByAdmin Boolean  @default(false)
+  ipAddress      String?
+
+  post Post @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model Inquiry {
+  id         String   @id @default(dbgenerated()) @db.Uuid
+  name       String?
+  email      String
+  subject    String?
+  message    String
+  responded  Boolean  @default(false)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+}
